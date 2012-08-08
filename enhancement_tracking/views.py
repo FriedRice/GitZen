@@ -27,7 +27,7 @@ from enhancement_tracking.forms import (
 
 # Constant OAuth handler and authorization URL for access to GitHub's OAuth.
 OAUTH2_HANDLER = OAuth2(CLIENT_ID, CLIENT_SECRET, site='https://github.com/',
-                        redirect_uri='http://gitzen.herokuapp.com/' \
+                        redirect_uri='http://gitzen.policystat.com/' \
                                      'confirm_git_oauth',
                         authorization_url='login/oauth/authorize',
                         token_url='login/oauth/access_token')
@@ -411,6 +411,7 @@ def home(request):
     api_access_data = profile.api_access_data
     product_name = api_access_data.product_name
     context = {}
+    context['is_group_superuser'] = profile.is_group_superuser
     
     try:
         update_cache_index(api_access_data)
@@ -424,16 +425,15 @@ def home(request):
                                  'exception_message': e.args[0],
                                  'product_name': product_name}
         return render_to_response('home.html', context,
-                                    context_instance=RequestContext(request))
+                                  context_instance=RequestContext(request))
     
     # Account for the time zone offset and get the enhancement data
     cache_data = cache.get(api_access_data.id)
     enhancement_tables = _time_adjust_enhancement_data(cache_data, utc_offset)
-    context = enhancement_tables
+    context = dict(context.items() + enhancement_tables.items())
         
     # Add additional data to be used in the context of the home page
     context['api_requests_successful'] = True
-    context['is_group_superuser'] = profile.is_group_superuser
     context['product_name'] = product_name
     context['zen_url'] = api_access_data.zen_url
     if profile.view_type == 'ZEN':
